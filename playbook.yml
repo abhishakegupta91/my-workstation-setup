@@ -40,7 +40,7 @@
           - vim
         state: present
 
-    - name: 4. Install Core CLI Tools
+    - name: 5. Install Core CLI Tools
       ansible.builtin.apt:
         name:
           - zsh
@@ -50,7 +50,7 @@
         state: present
 
     # --- Oh My Zsh Installation (Native) ---
-    - name: 4.1. Install Oh My Zsh
+    - name: 6. Install Oh My Zsh
       become: no
       ansible.builtin.shell:
         cmd: |
@@ -89,6 +89,7 @@
         path: /etc/apt/keyrings
         state: directory
         mode: '0755'
+      ignore_errors: yes
 
     - name: 5.2. Add Docker's official GPG key
       ansible.builtin.get_url:
@@ -96,6 +97,7 @@
         dest: /etc/apt/keyrings/docker.asc
         mode: '0644'
         force: true
+      ignore_errors: yes
 
     - name: 5.3. Add Docker repository
       ansible.builtin.apt_repository:
@@ -106,6 +108,7 @@
         state: present
         filename: docker
         update_cache: yes
+      ignore_errors: yes
 
     - name: 5.4. Install Docker Engine (latest version)
       ansible.builtin.apt:
@@ -116,12 +119,15 @@
           - docker-compose-plugin
         state: present
         update_cache: yes
+      ignore_errors: yes
 
     - name: 5.5. Add current user to 'docker' group
       ansible.builtin.user:
         name: "{{ username }}"
         groups: docker
         append: yes
+      ignore_errors: yes
+      when: "'docker-ce' in ansible_facts.packages"
 
     # --- Dotfile Configuration ---
     - name: 6. Copy dotfiles from repo to home directory
@@ -135,3 +141,21 @@
         - .zshrc
         - .gitconfig
         - .tmux.conf
+
+    - name: 7. Display setup completion message
+      ansible.builtin.debug:
+        msg: |
+          🎉 Workstation Setup Complete!
+          
+          📋 Services Installed:
+          • Zsh + Oh My Zsh with enhanced plugins
+          • Core CLI tools (curl, wget, git, vim, htop, tmux, micro)
+          • Build tools (build-essential)
+          • Cross-platform dotfiles
+          • Docker installation was attempted (may have failed)
+          
+          🔧 Next Steps:
+          1. Open a new terminal to use Zsh
+          2. Check if Docker is available with: docker --version
+          3. If Docker failed, install manually: https://docs.docker.com/engine/install/ubuntu/
+          4. Customize your dotfiles in ~/ if needed

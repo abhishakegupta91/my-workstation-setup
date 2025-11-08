@@ -84,18 +84,23 @@
           - docker-compose-plugin
         state: present
         update_cache: yes
+      ignore_errors: yes
 
     - name: 10. Add user to docker group
       ansible.builtin.user:
         name: "{{ username }}"
         groups: docker
         append: yes
+      ignore_errors: yes
+      when: "'docker-ce' in ansible_facts.packages"
 
     - name: 11. Create Docker directory for Portainer
       ansible.builtin.file:
         path: /opt/portainer
         state: directory
         mode: '0755'
+      ignore_errors: yes
+      when: "'docker-ce' in ansible_facts.packages"
 
     - name: 12. Deploy Portainer Container
       ansible.builtin.docker_container:
@@ -109,6 +114,8 @@
           - /opt/portainer:/data
         restart_policy: unless-stopped
         state: started
+      ignore_errors: yes
+      when: "'docker-ce' in ansible_facts.packages"
 
     - name: 13. Install WireGuard
       ansible.builtin.apt:
@@ -169,24 +176,25 @@
           
           📋 Services Installed:
           • Nginx (System) - Reverse proxy + static files (HTTP:80, HTTPS:443)
-          • Docker with Portainer - Container management (HTTPS:9443)
+          • Docker with Portainer: Installation was attempted (may have failed)
           • Node.js & npm - JavaScript runtime
           • WireGuard VPN - Secure remote access (Port:51820)
           • UFW Firewall - Security protection
           • Monitoring tools - htop, iotop, nethogs
           
           🌐 Hybrid Architecture:
-          • System Nginx handles public ports 80/443 and SSL
-          • Docker containers run on internal ports (8080+)
+          • System Nginx handles ports 80/443 and SSL
+          • Docker containers run on internal ports (8080+) if Docker installed
           • Easy project setup with template in /etc/nginx/sites-projects/
           
           🔧 Next Steps:
           1. Configure WireGuard: wg-quick up wg0
-          2. Set up Portainer admin account at https://your-ip:9443
-          3. Deploy projects via Docker + Portainer
-          4. Add Nginx reverse proxy configs for projects
-          5. Check project guide: ~/project-setup.md
-          6. Run './server-info.sh' for system status
+          2. Check Docker: docker --version
+          3. If Docker works: Set up Portainer at https://your-ip:9443
+          4. Deploy projects via Docker + Portainer (if available)
+          5. Add Nginx reverse proxy configs for projects
+          6. Check project guide: ~/project-setup.md
+          7. Run './server-info.sh' for system status
           
           📁 File Locations:
           • Nginx configs: config/ directory in this repo
@@ -195,4 +203,4 @@
           • Project template: /etc/nginx/sites-projects/project-template.conf
           • Static files: /var/www/html/
           
-          ⚠️  Remember to log out and back in for Docker group changes!
+          ⚠️  Remember to log out and back in for Docker group changes (if Docker installed)!
