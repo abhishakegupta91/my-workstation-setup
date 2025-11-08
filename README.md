@@ -50,7 +50,7 @@ Clone this repo to your home directory and `cd` into it.
 
 ```bash
 # Make sure to use your own username and repo name
-git clone [https://github.com/YOUR-USERNAME/my-workstation-setup.git](https://github.com/YOUR-USERNAME/my-workstation-setup.git)
+git clone [https://github.com/codams-org/my-workstation-setup.git](https://github.com/codams-org/my-workstation-setup.git)
 cd my-workstation-setup
 ```
 
