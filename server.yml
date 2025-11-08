@@ -92,7 +92,6 @@
         groups: docker
         append: yes
       ignore_errors: yes
-      when: "'docker-ce' in ansible_facts.packages"
 
     - name: 11. Create Docker directory for Portainer
       ansible.builtin.file:
@@ -100,7 +99,6 @@
         state: directory
         mode: '0755'
       ignore_errors: yes
-      when: "'docker-ce' in ansible_facts.packages"
 
     - name: 12. Deploy Portainer Container
       ansible.builtin.docker_container:
@@ -115,7 +113,6 @@
         restart_policy: unless-stopped
         state: started
       ignore_errors: yes
-      when: "'docker-ce' in ansible_facts.packages"
 
     - name: 13. Install WireGuard
       ansible.builtin.apt:

@@ -59,7 +59,7 @@
           fi
         creates: "/home/{{ username }}/.oh-my-zsh"
 
-    - name: 4.2. Install Oh My Zsh plugins
+    - name: 6.1. Install Oh My Zsh plugins
       become: no
       ansible.builtin.shell:
         cmd: |
@@ -78,20 +78,20 @@
             git clone https://github.com/MichaelAquilina/zsh-you-should-use "$HOME/.oh-my-zsh/custom/plugins/you-should-use"
           fi
 
-    - name: 4.3. Change default shell to Zsh
+    - name: 6.2. Change default shell to Zsh
       ansible.builtin.user:
         name: "{{ username }}"
         shell: /usr/bin/zsh
 
     # --- Docker Installation (Official Repo) ---
-    - name: 5.1. Create directory for Docker GPG key
+    - name: 7.1. Create directory for Docker GPG key
       ansible.builtin.file:
         path: /etc/apt/keyrings
         state: directory
         mode: '0755'
       ignore_errors: yes
 
-    - name: 5.2. Add Docker's official GPG key
+    - name: 7.2. Add Docker's official GPG key
       ansible.builtin.get_url:
         url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
         dest: /etc/apt/keyrings/docker.asc
@@ -99,7 +99,7 @@
         force: true
       ignore_errors: yes
 
-    - name: 5.3. Add Docker repository
+    - name: 7.3. Add Docker repository
       ansible.builtin.apt_repository:
         repo: >
           deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] 
@@ -110,7 +110,7 @@
         update_cache: yes
       ignore_errors: yes
 
-    - name: 5.4. Install Docker Engine (latest version)
+    - name: 7.4. Install Docker Engine (latest version)
       ansible.builtin.apt:
         name:
           - docker-ce
@@ -121,16 +121,15 @@
         update_cache: yes
       ignore_errors: yes
 
-    - name: 5.5. Add current user to 'docker' group
+    - name: 7.5. Add current user to 'docker' group
       ansible.builtin.user:
         name: "{{ username }}"
         groups: docker
         append: yes
       ignore_errors: yes
-      when: "'docker-ce' in ansible_facts.packages"
 
     # --- Dotfile Configuration ---
-    - name: 6. Copy dotfiles from repo to home directory
+    - name: 8. Copy dotfiles from repo to home directory
       become: no # Run this as the user
       ansible.builtin.copy:
         src: "dotfiles/{{ item }}"
@@ -142,7 +141,7 @@
         - .gitconfig
         - .tmux.conf
 
-    - name: 7. Display setup completion message
+    - name: 9. Display setup completion message
       ansible.builtin.debug:
         msg: |
           🎉 Workstation Setup Complete!
