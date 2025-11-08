@@ -1,0 +1,183 @@
+---
+- name: Configure Ubuntu/Debian Home Server
+  hosts: localhost
+  connection: local
+  become: yes
+  
+  vars:
+    # Get the username of the user running the playbook
+    username: "{{ ansible_user_id }}"
+    # Portainer admin password (change this!)
+    portainer_password: "admin123"
+
+  tasks:
+    - name: 1. Update APT Package Cache
+      ansible.builtin.apt:
+        update_cache: yes
+      changed_when: false
+
+    - name: 2. Install Basic Utilities
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - dnsutils
+          - net-tools
+          - htop
+          - iotop
+          - nethogs
+          - logrotate
+          - supervisor
+          - rsync
+          - ufw
+          - nmap
+        state: present
+
+    - name: 3. Install Node.js (via NodeSource repository)
+      ansible.builtin.shell:
+        cmd: |
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          apt-get install -y nodejs
+        creates: /usr/bin/node
+
+    - name: 4. Install Nginx Web Server
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: 5. Configure UFW Firewall
+      ansible.builtin.ufw:
+        state: enabled
+        policy: deny
+
+    - name: 6. Allow essential UFW ports
+      ansible.builtin.ufw:
+        rule: allow
+        port: "{{ item }}"
+      loop:
+        - "22"    # SSH
+        - "80"    # HTTP
+        - "443"   # HTTPS
+        - "51820" # WireGuard (default)
+
+    - name: 7. Install and Start Docker
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: 8. Add user to docker group
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: docker
+        append: yes
+
+    - name: 9. Create Docker directory for Portainer
+      ansible.builtin.file:
+        path: /opt/portainer
+        state: directory
+        mode: '0755'
+
+    - name: 10. Deploy Portainer Container
+      ansible.builtin.docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        ports:
+          - "9443:9443"
+          - "8000:8000"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /opt/portainer:/data
+        restart_policy: unless-stopped
+        state: started
+
+    - name: 11. Install WireGuard
+      ansible.builtin.apt:
+        name: wireguard
+        state: present
+
+    - name: 12. Enable and start essential services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - nginx
+        - docker
+        - ufw
+        - supervisor
+
+    - name: 13. Copy Nginx configuration files
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: '0644'
+        backup: yes
+      loop:
+        - src: config/nginx-default.conf
+          dest: /etc/nginx/sites-available/default
+        - src: config/project-template.conf
+          dest: /etc/nginx/sites-projects/project-template.conf
+
+    - name: 14. Create project configuration directory
+      ansible.builtin.file:
+        path: /etc/nginx/sites-projects
+        state: directory
+        mode: '0755'
+
+    - name: 15. Restart Nginx to apply configuration
+      ansible.builtin.systemd:
+        name: nginx
+        state: restarted
+
+    - name: 16. Copy scripts and documentation
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - src: scripts/server-info.sh
+          dest: "/home/{{ username }}/server-info.sh"
+          mode: '0755'
+        - src: docs/project-setup.md
+          dest: "/home/{{ username }}/project-setup.md"
+          mode: '0644'
+
+    - name: 17. Display setup completion message
+      ansible.builtin.debug:
+        msg: |
+          🎉 Home Server Setup Complete!
+          
+          📋 Services Installed:
+          • Nginx (System) - Reverse proxy + static files (HTTP:80, HTTPS:443)
+          • Docker with Portainer - Container management (HTTPS:9443)
+          • Node.js & npm - JavaScript runtime
+          • WireGuard VPN - Secure remote access (Port:51820)
+          • UFW Firewall - Security protection
+          • Monitoring tools - htop, iotop, nethogs
+          
+          🌐 Hybrid Architecture:
+          • System Nginx handles public ports 80/443 and SSL
+          • Docker containers run on internal ports (8080+)
+          • Easy project setup with template in /etc/nginx/sites-projects/
+          
+          🔧 Next Steps:
+          1. Configure WireGuard: wg-quick up wg0
+          2. Set up Portainer admin account at https://your-ip:9443
+          3. Deploy projects via Docker + Portainer
+          4. Add Nginx reverse proxy configs for projects
+          5. Check project guide: ~/project-setup.md
+          6. Run './server-info.sh' for system status
+          
+          📁 File Locations:
+          • Nginx configs: config/ directory in this repo
+          • Scripts: scripts/ directory in this repo
+          • Documentation: docs/ directory in this repo
+          • Project template: /etc/nginx/sites-projects/project-template.conf
+          • Static files: /var/www/html/
+          
+          ⚠️  Remember to log out and back in for Docker group changes!
