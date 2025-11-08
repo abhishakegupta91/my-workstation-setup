@@ -78,10 +78,10 @@
     - name: 9. Install and Start Docker
       ansible.builtin.apt:
         name:
-          - docker-ce=5:27.*
-          - docker-ce-cli=5:27.*
-          - containerd.io=1.7.*
-          - docker-compose-plugin=2:27.*
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
         state: present
         update_cache: yes
 

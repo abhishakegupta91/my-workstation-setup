@@ -188,7 +188,7 @@ This approach makes the repository:
 ### General Notes
   * **Idempotency**: Both playbooks are designed to be idempotent. You can safely run them multiple times.
   * **OS Support**: Designed for `amd64` (64-bit Intel/AMD) systems running **Ubuntu** or **Debian**.
-  * **Version Pinning**: Docker packages are pinned to specific versions for consistency.
+  * **Docker Installation**: Installs latest available Docker version from official repository.
   * **CI/CD Testing**: Includes GitHub Actions workflows for syntax checking and linting.
   * **Locale Configuration**: Playbooks automatically configure UTF-8 locale to prevent encoding issues.
 
