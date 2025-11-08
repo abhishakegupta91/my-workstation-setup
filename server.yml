@@ -5,8 +5,8 @@
   become: yes
   
   vars:
-    # Get the username of the user running the playbook
-    username: "{{ ansible_user_id }}"
+    # Get the actual username of the user running the playbook (not root)
+    username: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
     # Portainer admin password (change this!)
     portainer_password: "admin123"
   
