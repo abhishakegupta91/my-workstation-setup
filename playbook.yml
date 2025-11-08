@@ -1,0 +1,122 @@
+- name: Configure My Ubuntu/Debian Workstation
+  hosts: localhost
+  connection: local
+  become: yes
+  
+  vars:
+    # Get the username of the user running the playbook
+    username: "{{ ansible_user_id }}"
+
+  tasks:
+    - name: 1. Update APT Package Cache
+      ansible.builtin.apt:
+        update_cache: yes
+      changed_when: false # Don't report this as a "change"
+
+    - name: 2. Install Prerequisite Packages
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - git
+          - ca-certificates
+          - gnupg
+          - build-essential
+          - vim
+        state: present
+
+    - name: 3. Install Core CLI Tools
+      ansible.builtin.apt:
+        name:
+          - zsh
+          - htop
+          - tmux
+          - micro
+        state: present
+
+    # --- Oh My Zsh Installation (Native) ---
+    - name: 4.1. Install Oh My Zsh
+      become: no
+      ansible.builtin.shell:
+        cmd: |
+          if [ ! -d "$HOME/.oh-my-zsh" ]; then
+            RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+          fi
+        creates: "/home/{{ username }}/.oh-my-zsh"
+
+    - name: 4.2. Install Oh My Zsh plugins
+      become: no
+      ansible.builtin.shell:
+        cmd: |
+          # Install zsh-autosuggestions
+          if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
+            git clone https://github.com/zsh-users/zsh-autosuggestions "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+          fi
+          
+          # Install zsh-syntax-highlighting
+          if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
+            git clone https://github.com/zsh-users/zsh-syntax-highlighting "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+          fi
+          
+          # Install you-should-use
+          if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/you-should-use" ]; then
+            git clone https://github.com/MichaelAquilina/zsh-you-should-use "$HOME/.oh-my-zsh/custom/plugins/you-should-use"
+          fi
+
+    - name: 4.3. Change default shell to Zsh
+      ansible.builtin.user:
+        name: "{{ username }}"
+        shell: /usr/bin/zsh
+
+    # --- Docker Installation (Official Repo) ---
+    - name: 5.1. Create directory for Docker GPG key
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: 5.2. Add Docker's official GPG key
+      ansible.builtin.get_url:
+        url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+        force: true
+
+    - name: 5.3. Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: >
+          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] 
+          https://download.docker.com/linux/{{ ansible_distribution | lower }}
+          {{ ansible_distribution_release }} stable
+        state: present
+        filename: docker
+        update_cache: yes
+
+    - name: 5.4. Install Docker Engine (specific version)
+      ansible.builtin.apt:
+        name:
+          - docker-ce=5:24.0.*
+          - docker-ce-cli=5:24.0.*
+          - containerd.io=1.6.*
+          - docker-compose-plugin=2:2.20.*
+        state: present
+        update_cache: yes
+
+    - name: 5.5. Add current user to 'docker' group
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: docker
+        append: yes
+
+    # --- Dotfile Configuration ---
+    - name: 6. Copy dotfiles from repo to home directory
+      become: no # Run this as the user
+      ansible.builtin.copy:
+        src: "dotfiles/{{ item }}"
+        dest: "/home/{{ username }}/{{ item }}"
+        mode: '0644'
+        backup: yes # Creates a backup of existing files
+      loop:
+        - .zshrc
+        - .gitconfig
+        - .tmux.conf

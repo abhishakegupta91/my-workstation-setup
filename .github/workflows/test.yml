@@ -1,0 +1,60 @@
+name: Test Ansible Playbook
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro: [ubuntu20.04, ubuntu22.04]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Test playbook on ${{ matrix.distro }}
+      uses: docker://quay.io/ansible/ansible-runner:latest
+      with:
+        args: |
+          ansible-playbook playbook.yml --syntax-check
+          
+  test-debian:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro: [debian11, debian12]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Test playbook on ${{ matrix.distro }}
+      uses: docker://quay.io/ansible/ansible-runner:latest
+      with:
+        args: |
+          ansible-playbook playbook.yml --syntax-check
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        pip install ansible-lint yamllint
+        
+    - name: Lint Ansible files
+      run: |
+        ansible-lint playbook.yml
+        yamllint .
