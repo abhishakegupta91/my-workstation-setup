@@ -190,6 +190,7 @@ This approach makes the repository:
   * **OS Support**: Designed for `amd64` (64-bit Intel/AMD) systems running **Ubuntu** or **Debian**.
   * **Version Pinning**: Docker packages are pinned to specific versions for consistency.
   * **CI/CD Testing**: Includes GitHub Actions workflows for syntax checking and linting.
+  * **Locale Configuration**: Playbooks automatically configure UTF-8 locale to prevent encoding issues.
 
 -----
 

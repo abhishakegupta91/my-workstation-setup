@@ -6,14 +6,29 @@
   vars:
     # Get the username of the user running the playbook
     username: "{{ ansible_user_id }}"
+  
+  environment:
+    LC_ALL: en_US.UTF-8
+    LANG: en_US.UTF-8
+    LANGUAGE: en_US.UTF-8
 
   tasks:
-    - name: 1. Update APT Package Cache
+    - name: 1. Ensure UTF-8 locale is configured
+      ansible.builtin.locale_gen:
+        name: en_US.UTF-8
+        state: present
+
+    - name: 2. Set system locale to UTF-8
+      ansible.builtin.command:
+        cmd: localectl set-locale LANG=en_US.UTF-8
+      changed_when: false
+
+    - name: 3. Update APT Package Cache
       ansible.builtin.apt:
         update_cache: yes
       changed_when: false # Don't report this as a "change"
 
-    - name: 2. Install Prerequisite Packages
+    - name: 4. Install Prerequisite Packages
       ansible.builtin.apt:
         name:
           - curl
@@ -25,7 +40,7 @@
           - vim
         state: present
 
-    - name: 3. Install Core CLI Tools
+    - name: 4. Install Core CLI Tools
       ansible.builtin.apt:
         name:
           - zsh
