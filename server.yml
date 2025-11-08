@@ -139,14 +139,12 @@
       loop:
         - src: config/nginx-default.conf
           dest: /etc/nginx/sites-available/default
-        - src: config/project-template.conf
-          dest: /etc/nginx/sites-projects/project-template.conf
 
-    - name: 16. Create project configuration directory
+    - name: 16. Ensure default site is enabled
       ansible.builtin.file:
-        path: /etc/nginx/sites-projects
-        state: directory
-        mode: '0755'
+        src: /etc/nginx/sites-available/default
+        dest: /etc/nginx/sites-enabled/default
+        state: link
 
     - name: 17. Restart Nginx to apply configuration
       ansible.builtin.systemd:
