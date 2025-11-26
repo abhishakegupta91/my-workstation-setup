@@ -12,11 +12,12 @@
       ansible.builtin.apt:
         update_cache: yes
 
-    - name: 2. Install git and vim
+    - name: 2. Install git, vim, and nginx
       ansible.builtin.apt:
         name:
           - git
           - vim
+          - nginx
         state: present
 
     - name: 3. Install Node.js and npm (NodeSource 18.x)
