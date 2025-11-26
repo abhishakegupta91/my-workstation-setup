@@ -35,13 +35,21 @@
         state: present
         update_cache: yes
 
-    - name: 5. Add user to docker group
+    - name: 5. Install PostgreSQL client tools (psql)
+      ansible.builtin.apt:
+        name:
+          - postgresql-client-common
+          - postgresql-client
+        state: present
+        update_cache: yes
+
+    - name: 6. Add user to docker group
       ansible.builtin.user:
         name: "{{ username }}"
         groups: docker
         append: yes
 
-    - name: 6. Ensure .ssh directory exists
+    - name: 7. Ensure .ssh directory exists
       ansible.builtin.file:
         path: "/home/{{ username }}/.ssh"
         state: directory
@@ -49,18 +57,18 @@
         group: "{{ username }}"
         mode: '0700'
 
-    - name: 7. Generate Ed25519 SSH key if not present
+    - name: 8. Generate Ed25519 SSH key if not present
       ansible.builtin.command:
         cmd: ssh-keygen -t ed25519 -C "ec2-instance-{{ inventory_hostname }}" -f "/home/{{ username }}/.ssh/id_ed25519" -N ""
         creates: "/home/{{ username }}/.ssh/id_ed25519"
       become_user: "{{ username }}"
 
-    - name: 8. Show public key (copy this to GitHub)
+    - name: 9. Show public key (copy this to GitHub)
       ansible.builtin.command:
         cmd: cat "/home/{{ username }}/.ssh/id_ed25519.pub"
       register: ssh_pub_key
 
-    - name: 9. Display SSH public key
+    - name: 10. Display SSH public key
       ansible.builtin.debug:
         msg: |
           Add this SSH public key to GitHub:
