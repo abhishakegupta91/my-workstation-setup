@@ -1,0 +1,66 @@
+---
+- name: Minimal EC2 Ubuntu Dev Setup
+  hosts: localhost
+  connection: local
+  become: yes
+
+  vars:
+    username: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
+
+  tasks:
+    - name: 1. Update APT package cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: 2. Install git and vim
+      ansible.builtin.apt:
+        name:
+          - git
+          - vim
+        state: present
+
+    - name: 3. Install Node.js and npm (NodeSource 18.x)
+      ansible.builtin.shell:
+        cmd: |
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          apt-get install -y nodejs
+        creates: /usr/bin/node
+
+    - name: 4. Install Docker and docker-compose
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+        update_cache: yes
+
+    - name: 5. Add user to docker group
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: docker
+        append: yes
+
+    - name: 6. Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: "/home/{{ username }}/.ssh"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: '0700'
+
+    - name: 7. Generate Ed25519 SSH key if not present
+      ansible.builtin.command:
+        cmd: ssh-keygen -t ed25519 -C "ec2-instance-{{ inventory_hostname }}" -f "/home/{{ username }}/.ssh/id_ed25519" -N ""
+        creates: "/home/{{ username }}/.ssh/id_ed25519"
+      become_user: "{{ username }}"
+
+    - name: 8. Show public key (copy this to GitHub)
+      ansible.builtin.command:
+        cmd: cat "/home/{{ username }}/.ssh/id_ed25519.pub"
+      register: ssh_pub_key
+
+    - name: 9. Display SSH public key
+      ansible.builtin.debug:
+        msg: |
+          Add this SSH public key to GitHub:
+          {{ ssh_pub_key.stdout }}
