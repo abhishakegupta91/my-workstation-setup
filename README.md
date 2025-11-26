@@ -2,11 +2,12 @@
 
 An Ansible playbook collection to automatically provision Ubuntu or Debian systems with preferred development tools, dotfiles, and configurations.
 
-This repository contains two playbooks:
+This repository contains three playbooks:
 - **`playbook.yml`**: For desktop/workstation setup
-- **`server.yml`**: For home server deployment
+- **`home-server.yml`**: For home server deployment
+- **`minimal-ec2-ubuntu-server.yml`**: For minimal EC2 Ubuntu server/dev setup
 
-Both playbooks are designed to be **idempotent** (safe to run multiple times) and work on both **Ubuntu** and **Debian**.
+All playbooks are designed to be **idempotent** (safe to run multiple times) and work on both **Ubuntu** and **Debian**.
 
 ## 📁 Repository Structure
 
@@ -133,6 +134,36 @@ This playbook configures a complete home server environment for web hosting and 
   * **Information Script**: `server-info.sh` provides quick system status and access URLs.
   * **Flexible Docker**: Portainer allows deploying databases, Redis, and any services as needed per project.
   * **Clean Architecture**: Configuration files, scripts, and documentation organized in separate directories.
+
+-----
+
+### ☁️ Minimal EC2 Ubuntu Server Playbook (`minimal-ec2-ubuntu-server.yml`)
+
+This playbook is intended for **fresh Ubuntu EC2 instances** where you want a lean developer/server environment plus an SSH key ready for GitHub.
+
+It performs the following actions:
+
+- **Core tools**
+  * Installs **git**
+  * Installs **vim**
+
+- **Runtime & containers**
+  * Installs **Node.js 18.x and npm** via the official NodeSource setup script
+  * Installs **Docker** from the Ubuntu repositories (`docker.io`)
+  * Installs classic **docker-compose** package
+  * Adds the main user to the **`docker`** group so Docker can be used without `sudo` (you still need to log out/in for this to take effect)
+
+- **SSH key for GitHub**
+  * Ensures the user's `~/.ssh` directory exists with correct permissions
+  * Generates an **Ed25519 SSH keypair** at `~/.ssh/id_ed25519` (only if it does not already exist)
+  * Uses a helpful comment of the form `ec2-instance-{{ inventory_hostname }}` in the public key so you can easily identify which instance it belongs to
+  * Prints the **public key** (`id_ed25519.pub`) in the Ansible output so you can copy and add it directly to GitHub
+
+To run it on an EC2 Ubuntu instance:
+
+```bash
+ansible-playbook minimal-ec2-ubuntu-server.yml --ask-become-pass
+```
 
 -----
 
