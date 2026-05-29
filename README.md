@@ -63,10 +63,10 @@ ansible-playbook playbook.yml --ask-become-pass
 
 **For Home Server:**
 ```bash
-ansible-playbook home-server.yml --ask-become-pass
+sudo ansible-playbook home-server.yml
 ```
 
-> You will be prompted to set a Portainer admin password before the playbook runs. This is never stored in the repository.
+> Run with `sudo` directly — using `--ask-become-pass` alongside `vars_prompt` (the Portainer password) causes a sudo timeout on local connections. Running as `sudo` avoids the conflict. You will still be prompted to set the Portainer admin password, which is never stored in the repository.
 
 **For Minimal EC2:**
 ```bash
