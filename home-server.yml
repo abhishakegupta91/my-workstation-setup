@@ -94,7 +94,24 @@
         - "443"   # HTTPS
         - "51820" # WireGuard (default)
 
-    - name: 9. Install and Start Docker
+    - name: 9a. Download Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /tmp/docker.gpg.key
+        mode: '0644'
+
+    - name: 9b. Add Docker GPG key to keyring
+      ansible.builtin.shell:
+        cmd: gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /tmp/docker.gpg.key
+        creates: /usr/share/keyrings/docker-archive-keyring.gpg
+
+    - name: 9c. Add Docker apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable"
+        state: present
+        filename: docker
+
+    - name: 9d. Install Docker CE
       ansible.builtin.apt:
         name:
           - docker-ce
@@ -103,7 +120,6 @@
           - docker-compose-plugin
         state: present
         update_cache: yes
-      ignore_errors: yes
 
     - name: 10. Add user to docker group
       ansible.builtin.user:
@@ -166,13 +182,13 @@
     # --- Tailscale ---
     - name: Download Tailscale GPG key
       ansible.builtin.get_url:
-        url: "https://pkgs.tailscale.com/stable/ubuntu/{{ ansible_distribution_release }}.noarmor.gpg"
+        url: "https://pkgs.tailscale.com/stable/ubuntu/{{ ansible_facts['distribution_release'] }}.noarmor.gpg"
         dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
         mode: '0644'
 
     - name: Add Tailscale apt repository
       ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu {{ ansible_distribution_release }} main"
+        repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu {{ ansible_facts['distribution_release'] }} main"
         state: present
         filename: tailscale
 
@@ -254,7 +270,7 @@
 
     - name: Add Netdata apt repository
       ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/netdata-archive-keyring.gpg] https://packagecloud.io/netdata/netdata/ubuntu/ {{ ansible_distribution_release }} main"
+        repo: "deb [signed-by=/usr/share/keyrings/netdata-archive-keyring.gpg] https://packagecloud.io/netdata/netdata/ubuntu/ {{ ansible_facts['distribution_release'] }} main"
         state: present
         filename: netdata
 
