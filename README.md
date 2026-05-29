@@ -36,7 +36,7 @@ my-workstation-setup/
 
 ## 🚀 Quick Start
 
-Follow these steps on a fresh, minimal installation of Ubuntu Desktop or Debian.
+Follow these steps on a fresh, minimal installation of Ubuntu or Debian.
 
 ### 1. Install Prerequisites
 
@@ -66,7 +66,7 @@ ansible-playbook playbook.yml --ask-become-pass
 ansible-playbook home-server.yml --ask-become-pass
 ```
 
-> You will be prompted to enter a Portainer admin password before the playbook runs. This is never stored in the repository.
+> You will be prompted to set a Portainer admin password before the playbook runs. This is never stored in the repository.
 
 **For Minimal EC2:**
 ```bash
@@ -83,23 +83,23 @@ That's it. Grab a coffee — when it's done, your system will be ready.
 
 #### Core & Shell
 
-- **Zsh**: A powerful, modern shell
-- **Oh My Zsh**: Installed via `git clone` (no piped install scripts)
-- **Zsh Plugins**: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `you-should-use`
+- **[Zsh](https://www.zsh.org/)**: A powerful, modern shell
+- **[Oh My Zsh](https://ohmyz.sh/)**: Installed via `git clone` (no piped install scripts)
+- **Zsh Plugins**: [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting), [you-should-use](https://github.com/MichaelAquilina/zsh-you-should-use)
 - **build-essential**: C/C++ compilers and tools (`make`, `gcc`, etc.)
 - **Git**: Version control system
 
 #### Terminal Utilities
 
-- **htop**: Interactive process viewer
-- **tmux**: Terminal multiplexer for persistent sessions
-- **micro**: Modern terminal-based text editor
+- **[htop](https://htop.dev/)**: Interactive process viewer
+- **[tmux](https://github.com/tmux/tmux)**: Terminal multiplexer for persistent sessions
+- **[micro](https://micro-editor.github.io/)**: Modern terminal-based text editor
 - **curl** & **wget**: File download utilities
 - **vim**: Powerful text editor
 
 #### Development Environment
 
-- **Docker Engine**: Full `docker-ce` package from the official repository
+- **[Docker Engine](https://docs.docker.com/engine/)**: Full `docker-ce` package from the official repository
 - **Docker Compose**: `docker compose` plugin (modern, integrated)
 - **User added to `docker` group**: Run Docker without `sudo`
 
@@ -107,19 +107,76 @@ That's it. Grab a coffee — when it's done, your system will be ready.
 
 ### 🏠 Home Server Playbook (`home-server.yml`)
 
+#### Prerequisites
+
+Before running this playbook, make sure you have:
+
+- **[Tailscale account](https://tailscale.com/)** (free) — required to authenticate the device after install. Sign up before running the playbook.
+- **Docker CE repository** added to apt — the playbook installs `docker-ce` from the official Docker repo, not `docker.io`. If it's a fresh machine this is handled automatically.
+
 #### Web Server & Development
 
-- **Nginx**: High-performance web server with reverse proxy capabilities
-- **Node.js & npm**: Node.js 18.x via the NodeSource apt repository (GPG-verified, no piped scripts)
-- **Docker**: Container platform with official CE packages
-- **Portainer**: Web-based Docker management UI at `https://your-server-ip:9443`
+- **[Nginx](https://nginx.org/)**: High-performance web server with reverse proxy capabilities
+- **[Node.js](https://nodejs.org/) 18.x & npm**: Installed via GPG-verified [NodeSource](https://github.com/nodesource/distributions) apt repository
+- **[Docker CE](https://docs.docker.com/engine/install/ubuntu/)**: Container platform with official CE packages
+- **[Portainer](https://www.portainer.io/)**: Web-based Docker management UI
+
+  | Access | URL |
+  |---|---|
+  | Portainer HTTPS | `https://your-server-ip:9443` |
+
+  > On first visit, create your admin account using the password you set when the playbook ran.
+
+#### Monitoring & Observability
+
+- **[Uptime Kuma](https://github.com/louislam/uptime-kuma)**: Self-hosted uptime monitoring with alerts (Telegram, Slack, email, and more)
+
+  | Access | URL |
+  |---|---|
+  | Uptime Kuma | `http://your-server-ip:3001` |
+
+  > On first visit, create an admin account. Then add monitors for your services — HTTP, TCP, DNS, ping, etc.
+
+  **Prerequisites**: Docker must be installed and running (handled by the playbook). No external account needed.
+
+- **[Netdata](https://www.netdata.cloud/)**: Real-time system metrics dashboard — CPU, memory, disk, network, and more
+
+  | Access | URL |
+  |---|---|
+  | Netdata | `http://your-server-ip:19999` |
+
+  > No login required by default. Accessible on your local network immediately after install. Installed from the [official Netdata repository](https://packagecloud.io/netdata/netdata) for up-to-date packages.
+
+  **Prerequisites**: None — installs directly via apt.
 
 #### Networking & Security
 
-- **UFW Firewall**: Essential ports open — SSH (22), HTTP (80), HTTPS (443), WireGuard (51820)
-- **WireGuard**: Modern VPN for secure remote access
+- **[UFW Firewall](https://help.ubuntu.com/community/UFW)**: Ports open after setup:
+
+  | Port | Service |
+  |---|---|
+  | 22 | SSH |
+  | 80 | HTTP |
+  | 443 | HTTPS |
+  | 3001 | Uptime Kuma |
+  | 9443 | Portainer |
+  | 19999 | Netdata |
+  | 51820 | WireGuard |
+
+- **[Tailscale](https://tailscale.com/)**: Zero-config mesh VPN — SSH into your server from anywhere without touching router port forwarding
+
+  **Prerequisites**: [Create a free Tailscale account](https://login.tailscale.com/start) before running the playbook.
+
+  **After the playbook runs**, authenticate the device:
+  ```bash
+  sudo tailscale up
+  ```
+  Then approve the device at [https://login.tailscale.com](https://login.tailscale.com). Once approved, you can SSH from anywhere using the Tailscale IP or device name — no port forwarding needed.
+
+- **[WireGuard](https://www.wireguard.com/)**: Modern VPN — requires manual configuration after install (`wg-quick up wg0`)
+
 - **DNS Utilities**: `dnsutils` for DNS troubleshooting
-- **Network Analysis**: `net-tools`, `nmap` for network monitoring
+- **Network Analysis**: `net-tools`, `nmap`
 
 #### System Monitoring & Management
 
@@ -128,14 +185,6 @@ That's it. Grab a coffee — when it's done, your system will be ready.
 - **Process Control**: `supervisor` for managing background processes
 - **Backup Tools**: `rsync` for file synchronisation and backups
 
-#### Server Features
-
-- **Auto-start Services**: All essential services enabled at boot
-- **Security Hardened**: Firewall enabled with minimal open ports
-- **Portainer Password Prompt**: Admin password is asked at run time — never hardcoded or committed
-- **Information Script**: `server-info.sh` shows quick system status and access URLs
-- **Flexible Docker**: Portainer lets you deploy databases, Redis, and any services per project
-
 ---
 
 ### ☁️ Minimal EC2 Ubuntu Server Playbook (`minimal-ec2-ubuntu-server.yml`)
@@ -143,7 +192,7 @@ That's it. Grab a coffee — when it's done, your system will be ready.
 Intended for **fresh Ubuntu EC2 instances** where you want a lean environment with an SSH key ready for GitHub.
 
 - **Core tools**: `git`, `vim`, `nginx`
-- **Node.js 18.x & npm**: Installed via GPG-verified NodeSource apt repository
+- **[Node.js](https://nodejs.org/) 18.x & npm**: Installed via GPG-verified [NodeSource](https://github.com/nodesource/distributions) apt repository
 - **Docker**: `docker.io` + `docker-compose-plugin` (modern plugin, not legacy standalone)
 - **User added to `docker` group**: Run Docker without `sudo` (log out/in required)
 - **SSH key for GitHub**:
@@ -173,15 +222,8 @@ ansible-playbook minimal-ec2-ubuntu-server.yml --ask-become-pass
 
 #### **`dotfiles/`** — User Configuration
 - `.zshrc`: Cross-platform Zsh configuration with Oh My Zsh and plugins
-- `.gitconfig`: Git user settings and preferences
+- `.gitconfig`: Git user settings and preferences (replace placeholder name and email)
 - `.tmux.conf`: Tmux terminal multiplexer settings
-
-### 🔄 How It Works
-
-1. **Ansible Playbooks**: Handle package installation, service management, and file copying
-2. **Configuration Files**: Stored in `config/` in their native formats for easy editing
-3. **Scripts**: Can be run independently for system management
-4. **Documentation**: Comprehensive guides in `docs/`
 
 ---
 
@@ -194,10 +236,10 @@ ansible-playbook minimal-ec2-ubuntu-server.yml --ask-become-pass
 ### For Home Server Setup
 - **Log out after setup**: Required for Docker group changes to take effect
 - **Portainer password**: You will be prompted to set this when running the playbook — it is never stored in the repo
-- **Portainer Access**: `https://your-server-ip:9443`
-- **Firewall**: UFW enabled with SSH (22), HTTP (80), HTTPS (443), WireGuard (51820)
-- **WireGuard**: Requires additional config after setup (`wg-quick up wg0`)
-- **Web Root**: Place websites in `/var/www/html/` for Nginx to serve them
+- **Tailscale**: Install creates the `tailscaled` service but does **not** authenticate automatically. Run `sudo tailscale up` after the playbook completes and approve at [https://login.tailscale.com](https://login.tailscale.com)
+- **Netdata is open by default**: No authentication is required to view the dashboard. It is accessible to anyone on the same network. If your server is publicly exposed, consider [adding basic auth via Nginx](https://learn.netdata.cloud/docs/netdata-agent/configuration/securing-netdata-agents)
+- **Uptime Kuma first-run**: The dashboard is open until you create an admin account — do this immediately after setup
+- **WireGuard**: Requires additional config after setup (`wg-quick up wg0`) — Tailscale is the easier alternative for most personal use cases
 
 ### General Notes
 - **Idempotency**: All playbooks are safe to run multiple times
@@ -210,30 +252,11 @@ ansible-playbook minimal-ec2-ubuntu-server.yml --ask-become-pass
 
 ## 🔧 Customization
 
-### Modifying Configurations
-
-Edit files in the `config/` directory:
-- `config/nginx-default.conf`: Modify system Nginx settings
-- `config/project-template.conf`: Update project Nginx template
-
-### User Dotfiles
-
-Edit files in `dotfiles/` to customise your shell environment:
-- `.zshrc`: Cross-platform Zsh with Oh My Zsh, plugins, aliases, and env vars
-- `.gitconfig`: Replace the placeholder name and email with your own
-- `.tmux.conf`: Tmux settings
-
-#### Zsh Configuration Features
-- Cross-platform: detects macOS vs Linux and adjusts PATH accordingly
-- 100,000 history entries with smart deduplication
-- Autosuggestions, syntax highlighting, and command recommendations
-- Optional NVM, Conda, and local env configs load gracefully if present
-
 ### Adding New Packages
 
 Add packages to the appropriate task in the relevant playbook:
-- System packages: add to the "Install Prerequisite Packages" or "Install Core CLI Tools" task
-- Docker services: add a `docker_container` task alongside Portainer
+- System packages: add to the "Install Basic Utilities" task
+- Docker services: add a `docker_container` task alongside Portainer and Uptime Kuma
 
 ### Adding Zsh Plugins
 
@@ -261,17 +284,3 @@ ansible-playbook playbook.yml --syntax-check
 # Dry run
 ansible-playbook playbook.yml --check --ask-become-pass
 ```
-
----
-
-## 🗺️ Roadmap
-
-Planned additions to the home server playbook:
-
-| Feature | Purpose |
-|---|---|
-| **Tailscale** | Secure remote access from anywhere — SSH into your server without port forwarding |
-| **Uptime Kuma** | Self-hosted uptime monitoring with alerts (Telegram, Slack, email) |
-| **Netdata** | Real-time system metrics dashboard |
-
-Each will be added as a separate PR.
