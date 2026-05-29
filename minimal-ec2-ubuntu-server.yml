@@ -43,11 +43,11 @@
         state: present
         update_cache: yes
 
-    - name: 4. Install Docker and docker-compose
+    - name: 4. Install Docker and docker-compose-plugin
       ansible.builtin.apt:
         name:
           - docker.io
-          - docker-compose
+          - docker-compose-plugin
         state: present
         update_cache: yes
 
