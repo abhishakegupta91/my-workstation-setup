@@ -51,12 +51,28 @@
           - nmap
         state: present
 
-    - name: 5. Install Node.js (via NodeSource repository)
+    - name: 5a. Download NodeSource GPG key
+      ansible.builtin.get_url:
+        url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+        dest: /tmp/nodesource.gpg.key
+        mode: '0644'
+
+    - name: 5b. Add NodeSource GPG key to keyring
       ansible.builtin.shell:
-        cmd: |
-          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-          apt-get install -y nodejs
-        creates: /usr/bin/node
+        cmd: gpg --dearmor -o /usr/share/keyrings/nodesource.gpg /tmp/nodesource.gpg.key
+        creates: /usr/share/keyrings/nodesource.gpg
+
+    - name: 5c. Add NodeSource apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main"
+        state: present
+        filename: nodesource
+
+    - name: 5d. Install Node.js
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+        update_cache: yes
 
     - name: 6. Install Nginx Web Server
       ansible.builtin.apt:
