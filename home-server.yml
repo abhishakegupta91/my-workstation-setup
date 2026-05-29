@@ -133,6 +133,31 @@
         state: started
       ignore_errors: yes
 
+    # --- Uptime Kuma ---
+    - name: Create Uptime Kuma data directory
+      ansible.builtin.file:
+        path: /opt/uptime-kuma
+        state: directory
+        mode: '0755'
+      ignore_errors: yes
+
+    - name: Deploy Uptime Kuma container
+      ansible.builtin.docker_container:
+        name: uptime-kuma
+        image: louislam/uptime-kuma:latest
+        ports:
+          - "3001:3001"
+        volumes:
+          - /opt/uptime-kuma:/app/data
+        restart_policy: unless-stopped
+        state: started
+      ignore_errors: yes
+
+    - name: Allow Uptime Kuma port through UFW
+      ansible.builtin.ufw:
+        rule: allow
+        port: "3001"
+
     - name: 13. Install WireGuard
       ansible.builtin.apt:
         name: wireguard
