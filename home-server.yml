@@ -5,7 +5,7 @@
   become: yes
 
   vars:
-    username: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
+    username: "{{ ansible_facts['env']['SUDO_USER'] | default(ansible_facts['user_id']) }}"
 
   vars_prompt:
     - name: portainer_password
@@ -257,43 +257,49 @@
           mode: '0644'
 
     # --- Netdata ---
-    - name: Download Netdata GPG key
-      ansible.builtin.get_url:
-        url: https://packagecloud.io/netdata/netdata/gpgkey
-        dest: /tmp/netdata.gpg.key
-        mode: '0644'
+    - name: Create Netdata data directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/netdata/config
+        - /opt/netdata/lib
+        - /opt/netdata/cache
+      ignore_errors: yes
 
-    - name: Add Netdata GPG key to keyring
-      ansible.builtin.shell:
-        cmd: gpg --dearmor -o /usr/share/keyrings/netdata-archive-keyring.gpg /tmp/netdata.gpg.key
-        creates: /usr/share/keyrings/netdata-archive-keyring.gpg
-
-    - name: Add Netdata apt repository
-      ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/netdata-archive-keyring.gpg] https://packagecloud.io/netdata/netdata/ubuntu/ {{ ansible_facts['distribution_release'] }} main"
-        state: present
-        filename: netdata
-
-    - name: Install Netdata
-      ansible.builtin.apt:
+    - name: Deploy Netdata container
+      ansible.builtin.docker_container:
         name: netdata
-        state: present
-        update_cache: yes
+        image: netdata/netdata:stable
+        ports:
+          - "19999:19999"
+        volumes:
+          - /opt/netdata/config:/etc/netdata
+          - /opt/netdata/lib:/var/lib/netdata
+          - /opt/netdata/cache:/var/cache/netdata
+          - /etc/passwd:/host/etc/passwd:ro
+          - /etc/group:/host/etc/group:ro
+          - /proc:/host/proc:ro
+          - /sys:/host/sys:ro
+          - /etc/os-release:/host/etc/os-release:ro
+        capabilities:
+          - SYS_PTRACE
+          - SYS_ADMIN
+        security_opts:
+          - apparmor:unconfined
+        restart_policy: unless-stopped
+        state: started
+      ignore_errors: yes
 
     - name: Allow Netdata through UFW
       ansible.builtin.ufw:
         rule: allow
         port: "19999"
 
-    - name: Enable and start Netdata
-      ansible.builtin.systemd:
-        name: netdata
-        enabled: yes
-        state: started
-
     - name: Netdata access info
       ansible.builtin.debug:
-        msg: "Netdata dashboard available at http://{{ ansible_default_ipv4.address }}:19999"
+        msg: "Netdata dashboard available at http://{{ ansible_facts['default_ipv4']['address'] }}:19999"
 
     - name: 19. Display setup completion message
       ansible.builtin.debug:
