@@ -3,13 +3,16 @@
   hosts: localhost
   connection: local
   become: yes
-  
+
   vars:
-    # Get the actual username of the user running the playbook (not root)
     username: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
-    # Portainer admin password (change this!)
-    portainer_password: "admin123"
-  
+
+  vars_prompt:
+    - name: portainer_password
+      prompt: "Enter Portainer admin password"
+      private: yes
+      confirm: yes
+
   environment:
     LC_ALL: en_US.UTF-8
     LANG: en_US.UTF-8
